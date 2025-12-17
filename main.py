@@ -4,6 +4,7 @@ import datetime
 import os
 import subprocess
 from instagrapi import Client
+from instagrapi.exceptions import ChallengeRequired, LoginRequired
 from dotenv import load_dotenv
 from src.fetch_meal import get_meal
 from src.render_image import render_meal_image
@@ -14,26 +15,68 @@ USERNAME = os.getenv("IG_USERNAME")
 PASSWORD = os.getenv("IG_PASSWORD")
 SESSION_PATH = "session.json"
 
+# 세션 디렉토리 생성
+if not os.path.exists("sessions"):
+    os.makedirs("sessions")
+
+SESSION_PATH = os.path.join("sessions", "instagram_session.json")
+
 def login_instagram():
     cl = Client()
 
+    # User-Agent 설정으로 봇 감지 우회
+    cl.set_user_agent("Instagram 219.0.0.12.117 Android")
+
     if os.path.exists(SESSION_PATH):
-        cl.load_settings(SESSION_PATH)
         try:
+            cl.load_settings(SESSION_PATH)
             cl.login(USERNAME, PASSWORD)
-        except Exception:
-            print("세션 만료됨. 재로그인 시도 중...")
-            cl.set_locale("ko_KR")
-            cl.set_timezone_offset(32400)
-            cl.login(USERNAME, PASSWORD)
-            cl.dump_settings(SESSION_PATH)
+            print("기존 세션으로 로그인 성공")
+        except (ChallengeRequired, LoginRequired) as e:
+            print(f"세션 오류 발생: {e}")
+            return handle_challenge_login(cl)
+        except Exception as e:
+            print(f"예상치 못한 오류: {e}")
+            return handle_challenge_login(cl)
     else:
-        cl.set_locale("ko_KR")
-        cl.set_timezone_offset(32400)
-        cl.login(USERNAME, PASSWORD)
-        cl.dump_settings(SESSION_PATH)
+        return handle_challenge_login(cl)
 
     return cl
+
+def handle_challenge_login(cl: Client):
+    """Challenge Required 상황 처리"""
+    try:
+        cl.set_locale("ko_KR")
+        cl.set_timezone_offset(32400)
+
+        # 더 안전한 로그인 시도
+        cl.login(USERNAME, PASSWORD)
+        cl.dump_settings(SESSION_PATH)
+        print("로그인 성공")
+        return cl
+
+    except ChallengeRequired as e:
+        print("Instagram에서 추가 인증을 요구합니다.")
+        print("해결 방법:")
+        print("1. Instagram 앱에서 직접 로그인")
+        print("2. 의심스러운 활동 알림 승인")
+        print("3. 잠시 후 다시 시도")
+        print("4. 다른 네트워크에서 시도")
+
+        # Challenge를 처리할 수 있는 경우
+        if hasattr(cl, 'challenge_resolve'):
+            try:
+                cl.challenge_resolve(cl.challenge_code)
+                cl.login(USERNAME, PASSWORD)
+                cl.dump_settings(SESSION_PATH)
+                return cl
+            except Exception:
+                pass
+
+        raise e
+    except Exception as e:
+        print(f"로그인 실패: {e}")
+        raise e
 
 def main():
     # 오늘 날짜

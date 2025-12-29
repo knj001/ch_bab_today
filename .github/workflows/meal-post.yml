@@ -19,8 +19,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install requests pillow instagrapi
-    
+        pip install requests pillow
+
     - name: Run meal post
       env:
         NEIS_USERNAME: ${{ secrets.NEIS_USERNAME }}

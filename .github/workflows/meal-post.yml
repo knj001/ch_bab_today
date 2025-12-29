@@ -1,26 +1,30 @@
-name: 매일 급식 게시
+name: Meal Post to Instagram
+
 on:
   schedule:
-    - cron: '0 21 * * *'  # 매일 한국시간 오전 6시 (UTC 21시)
-  workflow_dispatch:  # 수동 실행 가능
+    - cron: '0 21 * * *'  # 매일 아침 6시 KST (UTC 21:00)
+  workflow_dispatch:
 
 jobs:
   post-meal:
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
     
-    - name: Python 환경 설정
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-        
-    - name: 의존성 설치
+    
+    - name: Install dependencies
       run: |
-        pip install -r requirements.txt
-        
-    - name: 급식 게시 실행
+        pip install requests pillow instagrapi
+    
+    - name: Run meal post
       env:
-        USERNAME: ${{ secrets.USERNAME }}
-        PASSWORD: ${{ secrets.PASSWORD }}
-      run: python main.py
+        NEIS_USERNAME: ${{ secrets.NEIS_USERNAME }}
+        NEIS_API_KEY: ${{ secrets.NEIS_API_KEY }}
+        IG_USERNAME: ${{ secrets.IG_USERNAME }}
+        IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+      run: python post_meal.py

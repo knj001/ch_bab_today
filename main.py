@@ -11,8 +11,8 @@ from src.render_image import render_meal_image
 
 load_dotenv()
 
-USERNAME = os.getenv("IG_USERNAME")
-PASSWORD = os.getenv("IG_PASSWORD")
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
 SESSION_PATH = "session.json"
 
 # 세션 디렉토리 생성

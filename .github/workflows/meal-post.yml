@@ -1,0 +1,26 @@
+name: 매일 급식 게시
+on:
+  schedule:
+    - cron: '0 21 * * *'  # 매일 한국시간 오전 6시 (UTC 21시)
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  post-meal:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Python 환경 설정
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: 의존성 설치
+      run: |
+        pip install -r requirements.txt
+        
+    - name: 급식 게시 실행
+      env:
+        IG_USERNAME: ${{ secrets.IG_USERNAME }}
+        IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+      run: python main.py
